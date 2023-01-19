@@ -7,12 +7,13 @@ if vim.fn.empty(vim.fn.glob(install_path)) > 0 then
   vim.cmd [[packadd packer.nvim]]
 end
 
--- Format on save
-vim.cmd [[autocmd BufWritePre <buffer> lua vim.lsp.buf.formatting_sync()]]
 -- Vue language options (volar)
 require 'lspconfig'.volar.setup {
   filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue', 'json' }
 }
+
+-- Format on save
+vim.cmd [[autocmd BufWritePre <buffer> lua vim.lsp.buf.formatting_sync()]]
 
 require("luasnip.loaders.from_vscode").lazy_load()
 
@@ -20,7 +21,7 @@ require('packer').startup(function(use)
   -- Package manager
   use 'wbthomason/packer.nvim'
 
-use 'christoomey/vim-tmux-navigator'
+  use 'christoomey/vim-tmux-navigator'
 
   use { -- LSP Configuration & Plugins
     'neovim/nvim-lspconfig',
@@ -54,6 +55,12 @@ use 'christoomey/vim-tmux-navigator'
     after = 'nvim-treesitter',
   }
 
+  use('neovim/nvim-lspconfig')
+  use('jose-elias-alvarez/null-ls.nvim')
+  use('MunifTanjim/prettier.nvim')
+  use('MunifTanjim/eslint.nvim')
+
+
   -- Git related plugins
   use 'tpope/vim-fugitive'
   use 'tpope/vim-rhubarb'
@@ -85,6 +92,56 @@ use 'christoomey/vim-tmux-navigator'
   end
 end)
 
+-- Prettier setup handling
+
+local null_ls = require("null-ls")
+
+null_ls.setup({
+  sources = {
+    null_ls.builtins.formatting.stylua,
+    null_ls.builtins.formatting.prettierd,
+    null_ls.builtins.diagnostics.eslint,
+    null_ls.builtins.completion.spell,
+  },
+})
+
+local eslint = require('eslint')
+
+eslint.setup({
+  bin = 'eslint_d', -- or `eslint_d`
+  code_actions = {
+    enable = true,
+    apply_on_save = {
+      enable = true,
+      types = { "directive", "problem", "suggestion", "layout" },
+    },
+    disable_rule_comment = {
+      enable = true,
+      location = "separate_line", -- or `same_line`
+    },
+  },
+  diagnostics = {
+    enable = true,
+    report_unused_disable_directives = false,
+    run_on = "type", -- or `save`
+  },
+})
+
+local prettier = require("prettier")
+
+-- Prettier
+prettier.setup({
+  bin = 'prettierd',
+  formatCommand = 'prettierd "${INPUT}"',
+  formatStdin = true,
+  env = { string.format('PRETTIERD_DEFAULT_CONFIG=%s',
+    vim.fn.expand('~/.config/nvim/utils/linter-config/.prettierrc.json')) },
+  filetypes = {
+    "css", "graphql", "html", "javascript", "javascriptreact", "json", "less", "markdown", "scss", "typescript",
+    "typescriptreact", "vue", "yaml"
+  },
+})
+
 -- When we are bootstrapping a configuration, it doesn't
 -- make sense to execute the rest of the init.lua.
 --
@@ -115,6 +172,8 @@ vim.o.hlsearch = false
 -- Make line numbers default
 vim.wo.number = true
 
+-- Enable relative line numbers
+vim.wo.relativenumber = true
 -- Enable mouse mode
 vim.o.mouse = 'a'
 
@@ -170,7 +229,6 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 require('lualine').setup {
   options = {
     icons_enabled = true,
-    theme = 'onedark',
     component_separators = '|',
     section_separators = '',
   },

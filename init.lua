@@ -13,7 +13,7 @@ require 'lspconfig'.volar.setup {
 }
 
 -- Format on save
-vim.cmd [[autocmd BufWritePre <buffer> lua vim.lsp.buf.formatting_sync()]]
+vim.cmd [[autocmd BufWritePre <buffer> lua vim.lsp.buf.format()]]
 
 require("luasnip.loaders.from_vscode").lazy_load()
 
@@ -37,6 +37,7 @@ require('packer').startup(function(use)
       'folke/neodev.nvim',
     },
   }
+  --  use 'sbdchd/neoformat'
 
   use { -- Autocompletion
     'hrsh7th/nvim-cmp',
@@ -50,14 +51,21 @@ require('packer').startup(function(use)
     end,
   }
 
+  use {
+    "windwp/nvim-autopairs",
+    config = function() require("nvim-autopairs").setup {} end
+  }
+
+  use { 'codota/tabnine-nvim', run = "./dl_binaries.sh" }
+
   use { -- Additional text objects via treesitter
     'nvim-treesitter/nvim-treesitter-textobjects',
     after = 'nvim-treesitter',
   }
 
-  use('neovim/nvim-lspconfig')
   use('jose-elias-alvarez/null-ls.nvim')
   use('MunifTanjim/prettier.nvim')
+
   use('MunifTanjim/eslint.nvim')
 
 
@@ -67,9 +75,9 @@ require('packer').startup(function(use)
   use 'lewis6991/gitsigns.nvim'
 
   use 'navarasu/onedark.nvim' -- Theme inspired by Atom
-  use 'folke/tokyonight.nvim'
+  use 'arcticicestudio/nord-vim'
   use 'nvim-lualine/lualine.nvim' -- Fancier statusline
-  use 'lukas-reineke/indent-blankline.nvim' -- Add indentation guides even on blank lines
+  --use 'lukas-reineke/indent-blankline.nvim' -- Add indentation guides even on blank lines
   use 'numToStr/Comment.nvim' -- "gc" to comment visual regions/lines
   use 'tpope/vim-sleuth' -- Detect tabstop and shiftwidth automatically
 
@@ -92,18 +100,16 @@ require('packer').startup(function(use)
   end
 end)
 
+require('tabnine').setup({
+  disable_auto_comment = true,
+  accept_keymap = "<Tab>",
+  dismiss_keymap = "<C-]>",
+  debounce_ms = 800,
+  suggestion_color = { gui = "#808080", cterm = 244 },
+  exclude_filetypes = { "TelescopePrompt" }
+})
 -- Prettier setup handling
 
-local null_ls = require("null-ls")
-
-null_ls.setup({
-  sources = {
-    null_ls.builtins.formatting.stylua,
-    null_ls.builtins.formatting.prettierd,
-    null_ls.builtins.diagnostics.eslint,
-    null_ls.builtins.completion.spell,
-  },
-})
 
 local eslint = require('eslint')
 
@@ -129,18 +135,18 @@ eslint.setup({
 
 local prettier = require("prettier")
 
--- Prettier
 prettier.setup({
   bin = 'prettierd',
   formatCommand = 'prettierd "${INPUT}"',
   formatStdin = true,
   env = { string.format('PRETTIERD_DEFAULT_CONFIG=%s',
-    vim.fn.expand('~/.config/nvim/utils/linter-config/.prettierrc.json')) },
+    vim.fn.expand('~/workspace/projects/yoroshiku frontend/.prettierrc.json')) },
   filetypes = {
     "css", "graphql", "html", "javascript", "javascriptreact", "json", "less", "markdown", "scss", "typescript",
     "typescriptreact", "vue", "yaml"
   },
 })
+
 
 -- When we are bootstrapping a configuration, it doesn't
 -- make sense to execute the rest of the init.lua.
@@ -150,7 +156,7 @@ if is_bootstrap then
   print '=================================='
   print '    Plugins are being installed'
   print '    Wait until Packer completes,'
-  print '       then restart nvim'
+  print '       then restart nvimp'
   print '=================================='
   return
 end
@@ -193,7 +199,7 @@ vim.wo.signcolumn = 'yes'
 
 -- Set colorscheme
 vim.o.termguicolors = true
-vim.cmd [[colorscheme tokyonight-storm]]
+vim.cmd [[colorscheme nord]]
 
 -- Set completeopt to have a better completion experience
 vim.o.completeopt = 'menuone,noselect'
@@ -239,10 +245,10 @@ require('Comment').setup()
 
 -- Enable `lukas-reineke/indent-blankline.nvim`
 -- See `:help indent_blankline.txt`
-require('indent_blankline').setup {
-  char = '┊',
-  show_trailing_blankline_indent = false,
-}
+--require('indent_blankline').setup {
+--  char = '┊',
+--  show_trailing_blankline_indent = false,
+--}
 
 -- Gitsigns
 -- See `:help gitsigns.txt`
@@ -295,6 +301,7 @@ require('nvim-treesitter.configs').setup {
   -- Add languages to be installed here that you want installed for treesitter
   ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'typescript', 'help', 'vim' },
 
+  autotag = { enable = true },
   highlight = { enable = true },
   indent = { enable = true, disable = { 'python' } },
   incremental_selection = {
